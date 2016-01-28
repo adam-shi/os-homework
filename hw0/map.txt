@@ -1,0 +1,17 @@
+1. _main is in .text
+recur in .text
+static data in .data (also appears in .text)
+
+2. .debug_* sections used for DWARF debugging
+.data segment contains statically allocated variable stuff
+.got.plt used for relocations
+.dynamic used for dynamic linking
+.eh_frame used for information that describes call frames for exceptions, but C doesn't have exceptions?
+.rodata for read-only data
+.text for executable code
+.rela.*, .dyn* for runtime relocation table
+
+3. The stack grows downward.
+4. 48 bytes.
+5. The heap is above the static and code, first malloc at 0x259b010. It grows upward.
+6. No, they are not contiguous because they are 112 bytes apart when they would only be 100 apart if they were contiguous.

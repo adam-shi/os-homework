@@ -1,0 +1,4 @@
+1. The file format is elf64-x86-64. The architecture is i386:x86-64
+2. Some names of sections are: .init, .plt, .text, .fini
+3. main is found in the section ".text". The address of main is "40064d".
+4. No, you do not see the stack or heap segment anywhere. This could be because these are allocated as the program runs and not in the disassembled code.

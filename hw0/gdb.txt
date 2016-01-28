@@ -1,0 +1,9 @@
+1. the value of argv is "0x7fffffffe688"
+2. argv points to: "/home/vagrant/code/personal/hw0/wc"
+3. the address of main is "0x40065c"
+4. info stack shows the stack trace of the current place in the program
+5. info frame shows information about the current stack frame, such as the address, source language, and saved registers.
+6. shows the names and values of all registers
+
+
+
