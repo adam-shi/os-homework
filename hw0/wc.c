@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 	
 		while (fread(s, 1, 1, stdin)) {
 			bytes++;
-			if (isNewWord && !isspace(*s)) {
+			if (isNewWord && !isspace(*s) && (*s != NULL)) {
 				words++;
 				isNewWord = 0;
 			} else if (isspace(*s)) {
