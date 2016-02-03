@@ -60,7 +60,7 @@ int cmd_exit(struct tokens *tokens) {
 
 /* Changes the current working directory to the specified directory */
 int cmd_cd(struct tokens *tokens) {
-  char wd[1024];
+  /*char wd[1024];
   if (getcwd(wd, sizeof(wd)) != NULL) {
     char* chDir = tokens_get_token(tokens, 1);
     char* newDir = strcat(wd, "/");
@@ -74,6 +74,17 @@ int cmd_cd(struct tokens *tokens) {
   } else {
     return -1;
   }
+
+*/
+	char* newDir = tokens_get_token(tokens, 1);
+	if (chdir(newDir) == 0) {
+		return 1;
+	}  else {
+		fprintf(stdout, "cd: %s: No such file or directory\n", newDir);
+		return -1;
+	}
+
+
 }
 
 /* Prints the current working directory to standard output */
