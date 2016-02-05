@@ -99,8 +99,6 @@ int cmd_pwd(struct tokens *tokens) {
 
 }
 
-
-
 /* Looks up the built-in command, if it exists. */
 int lookup(char cmd[]) {
   for (int i = 0; i < sizeof(cmd_table) / sizeof(fun_desc_t); i++)
@@ -156,7 +154,29 @@ int main(int argc, char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
+    	
+    	size_t num_args = tokens_get_length(tokens);
+    	char* arguments[num_args];
+    	int status;
+
+    	char* prog = tokens_get_token(tokens, 0);
+    	pid_t process_id = fork();
+
+    	if (process_id == 0) {
+    		for (int i = 0; i <= num_args; i++) {
+    			if (i == num_args) {
+    				arguments[i] = NULL;
+    			} else {
+    				arguments[i] = tokens_get_token(tokens, i);
+    			}
+    		}
+    		execv(prog, arguments);
+    	} else {	
+    		wait(&status);
+    	}
+
+
     }
 
     if (shell_is_interactive)
