@@ -107,6 +107,77 @@ int lookup(char cmd[]) {
   return -1;
 }
 
+/* runs a program where the path is not specified */
+void run_program(struct tokens *tokens) {
+	char* prog = tokens_get_token(tokens, 0);
+
+	char* env_path = getenv("PATH");
+	char* copy_path = malloc(1024 * sizeof(char));
+	strcpy(copy_path, env_path);
+
+
+	size_t num_args = tokens_get_length(tokens);
+	char* arguments[num_args];
+	int status;
+
+	char* full_prog_path = malloc(1024 * sizeof(char));
+	char* directory = strtok(copy_path, ":");
+
+	while (directory != NULL) {
+		sprintf(full_prog_path, "%s/%s", directory, prog);
+
+		// check if the program exists in that directory
+		if (access(full_prog_path, F_OK) != -1) {
+		// runs the program
+			pid_t process_id = fork();
+
+			if (process_id == 0) {
+			// run program in child process
+				for (int i = 0; i <= num_args; i++) {
+					if (i == num_args) {
+						arguments[i] = NULL;
+					} else {
+						arguments[i] = tokens_get_token(tokens, i);
+					}
+				}
+				execv(full_prog_path, arguments);
+			} else {	
+			//parent
+				wait(&status);
+				break;
+			}
+		} else {
+			directory = strtok(NULL, ":");
+		}
+	}
+
+	free(copy_path);
+	free(full_prog_path);    
+}
+
+/* runs a program where the path is specified */
+void run_program_path(struct tokens *tokens) {
+	size_t num_args = tokens_get_length(tokens);
+	char* arguments[num_args];
+	int status;
+
+	char* prog = tokens_get_token(tokens, 0);
+	pid_t process_id = fork();
+
+	if (process_id == 0) {
+		for (int i = 0; i <= num_args; i++) {
+			if (i == num_args) {
+				arguments[i] = NULL;
+			} else {
+				arguments[i] = tokens_get_token(tokens, i);
+			}
+		}
+		execv(prog, arguments);
+	} else {	
+		wait(&status);
+	}
+}
+
 /* Intialization procedures for this shell */
 void init_shell() {
   /* Our shell is connected to standard input. */
@@ -155,28 +226,18 @@ int main(int argc, char *argv[]) {
     } else {
       /* REPLACE this to run commands as programs. */
       // fprintf(stdout, "This shell doesn't know how to run programs.\n");
-    	
-    	size_t num_args = tokens_get_length(tokens);
-    	char* arguments[num_args];
-    	int status;
-
     	char* prog = tokens_get_token(tokens, 0);
-    	pid_t process_id = fork();
 
-    	if (process_id == 0) {
-    		for (int i = 0; i <= num_args; i++) {
-    			if (i == num_args) {
-    				arguments[i] = NULL;
-    			} else {
-    				arguments[i] = tokens_get_token(tokens, i);
-    			}
-    		}
-    		execv(prog, arguments);
-    	} else {	
-    		wait(&status);
+    	int has_path = 0;
+    	if (strchr(prog, '/') != NULL) {
+    		has_path = 1;
     	}
 
-
+    	if (!has_path) {
+    		run_program(tokens);
+    	} else {
+    		run_program_path(tokens);
+    	}
     }
 
     if (shell_is_interactive)
