@@ -9,6 +9,8 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "tokenizer.h"
 
@@ -60,22 +62,6 @@ int cmd_exit(struct tokens *tokens) {
 
 /* Changes the current working directory to the specified directory */
 int cmd_cd(struct tokens *tokens) {
-  /*char wd[1024];
-  if (getcwd(wd, sizeof(wd)) != NULL) {
-    char* chDir = tokens_get_token(tokens, 1);
-    char* newDir = strcat(wd, "/");
-    newDir = strcat(newDir, chDir);
-    if(chdir(newDir) == 0) {
-      return 1;
-    } else {
-      fprintf(stdout, "cd: %s: No such file or directory\n", chDir);
-      return -1;
-    }
-  } else {
-    return -1;
-  }
-
-*/
 	char* newDir = tokens_get_token(tokens, 1);
 	if (chdir(newDir) == 0) {
 		return 1;
@@ -108,18 +94,38 @@ int lookup(char cmd[]) {
 }
 
 /* runs a program where the path is not specified */
-void run_program(struct tokens *tokens) {
+void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 	char* prog = tokens_get_token(tokens, 0);
 
 	char* env_path = getenv("PATH");
 	char* copy_path = malloc(1024 * sizeof(char));
 	strcpy(copy_path, env_path);
 
-
-	size_t num_args = tokens_get_length(tokens);
-	char* arguments[num_args];
+	size_t num_args;
+	
 	int status;
+	int fildes;
+	int temp_fildes;
 
+	// open file and parse arguments correctly if redirect is needed
+	if (redirect == 1 || redirect == 2) {
+		num_args = redirect_index;
+
+		char* filename = tokens_get_token(tokens, redirect_index + 1);
+		fildes = open(filename, O_CREAT|O_RDWR, 0644);
+
+		if (redirect == 1) {
+			temp_fildes = dup(STDOUT_FILENO);
+			dup2(fildes , STDOUT_FILENO);
+		} else if (redirect == 2) {
+			temp_fildes = dup(STDIN_FILENO);
+			dup2(fildes , STDIN_FILENO);
+		}
+	} else {
+		num_args = tokens_get_length(tokens);
+	}
+	
+	char* arguments[num_args];
 	char* full_prog_path = malloc(1024 * sizeof(char));
 	char* directory = strtok(copy_path, ":");
 
@@ -141,8 +147,11 @@ void run_program(struct tokens *tokens) {
 					}
 				}
 				execv(full_prog_path, arguments);
+				
 			} else {	
 			//parent
+
+
 				wait(&status);
 				break;
 			}
@@ -151,18 +160,46 @@ void run_program(struct tokens *tokens) {
 		}
 	}
 
+	if (redirect == 1) {
+		dup2(temp_fildes, STDOUT_FILENO);
+	} else if (redirect == 2) {
+		dup2(temp_fildes, STDIN_FILENO);
+	}
+
 	free(copy_path);
 	free(full_prog_path);    
 }
 
 /* runs a program where the path is specified */
-void run_program_path(struct tokens *tokens) {
-	size_t num_args = tokens_get_length(tokens);
-	char* arguments[num_args];
+void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
+	size_t num_args;
 	int status;
+	int fildes;
+	int temp_fildes;
+
+	// open file and parse arguments correctly if redirect is needed
+	if (redirect == 1 || redirect == 2) {
+		num_args = redirect_index;
+
+		char* filename = tokens_get_token(tokens, redirect_index + 1);
+		fildes = open(filename, O_CREAT|O_RDWR, 0644);
+
+		if (redirect == 1) {
+			temp_fildes = dup(STDOUT_FILENO);
+			dup2(fildes , STDOUT_FILENO);
+		} else if (redirect == 2) {
+			temp_fildes = dup(STDIN_FILENO);
+			dup2(fildes , STDIN_FILENO);
+		}
+	} else {
+		num_args = tokens_get_length(tokens);
+	}
+
+	char* arguments[num_args];
 
 	char* prog = tokens_get_token(tokens, 0);
 	pid_t process_id = fork();
+
 
 	if (process_id == 0) {
 		for (int i = 0; i <= num_args; i++) {
@@ -176,6 +213,13 @@ void run_program_path(struct tokens *tokens) {
 	} else {	
 		wait(&status);
 	}
+	
+	if (redirect == 1) {
+		dup2(temp_fildes, STDOUT_FILENO);
+	} else if (redirect == 2) {
+		dup2(temp_fildes, STDIN_FILENO);
+	}
+
 }
 
 /* Intialization procedures for this shell */
@@ -228,15 +272,32 @@ int main(int argc, char *argv[]) {
       // fprintf(stdout, "This shell doesn't know how to run programs.\n");
     	char* prog = tokens_get_token(tokens, 0);
 
+    	int redirect = 0;
+    	int num_args = tokens_get_length(tokens);
+    	
+    	int redirect_index = 0;
+
+    	for (int i = 0; i < num_args; i++) {
+    		if (strcmp(tokens_get_token(tokens, i), ">") == 0) {
+	    		redirect = 1;
+	    		redirect_index = i;
+	    		break;
+	    	} else if (strcmp(tokens_get_token(tokens, i), "<") == 0) {
+	    		redirect = 2;
+	    		redirect_index = i;
+	    		break;
+	    	}
+    	}
+	    	
     	int has_path = 0;
     	if (strchr(prog, '/') != NULL) {
     		has_path = 1;
     	}
 
     	if (!has_path) {
-    		run_program(tokens);
+    		run_program(tokens, redirect, redirect_index);
     	} else {
-    		run_program_path(tokens);
+    		run_program_path(tokens, redirect, redirect_index);
     	}
     }
 
