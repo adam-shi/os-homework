@@ -245,8 +245,7 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 	  	signal(SIGTSTP, SIG_DFL);
 	  	signal(SIGCONT, SIG_DFL);
 	  	signal(SIGTTIN, SIG_DFL);
-	  	signal(SIGTTOU, SIG_DFL);
-
+	  	
 		pid_t new_pid = getpid();
 	  	setpgid(new_pid, 0);
 	  	tcsetpgrp(0, new_pid);
