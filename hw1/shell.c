@@ -147,10 +147,9 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 					}
 				}
 				execv(full_prog_path, arguments);
-				
+				exit(0);
 			} else {	
 			//parent
-
 
 				wait(&status);
 				break;
@@ -213,7 +212,7 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 	} else {	
 		wait(&status);
 	}
-	
+
 	if (redirect == 1) {
 		dup2(temp_fildes, STDOUT_FILENO);
 	} else if (redirect == 2) {
