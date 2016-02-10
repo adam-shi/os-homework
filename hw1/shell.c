@@ -30,7 +30,6 @@ int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_cd(struct tokens *tokens);
 int cmd_pwd(struct tokens *tokens);
-int cmd_wait(struct tokens *tokens);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -46,8 +45,7 @@ fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_cd, "cd", "change working directory"},
-  {cmd_pwd, "pwd", "print working directory"},
-  {cmd_wait, "wait", "waits for background processes"}
+  {cmd_pwd, "pwd", "print working directory"}
 };
 
 /* Prints a helpful description for the given command */
@@ -84,13 +82,7 @@ int cmd_pwd(struct tokens *tokens) {
   } else {
     return -1;
   }
-}
 
-/* Waits for all background processes to finish.*/
-int cmd_wait(struct tokens *tokens) {
-	int status;
-	wait(&status);
-	return 0;
 }
 
 /* Looks up the built-in command, if it exists. */
@@ -102,9 +94,7 @@ int lookup(char cmd[]) {
 }
 
 /* runs a program where the path is not specified */
-void run_program(struct tokens *tokens, int redirect, int redirect_index,
-	int background) {
-
+void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 	char* prog = tokens_get_token(tokens, 0);
 
 	char* env_path = getenv("PATH");
@@ -138,8 +128,6 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 	char* arguments[num_args];
 	char* full_prog_path = malloc(1024 * sizeof(char));
 	char* directory = strtok(copy_path, ":");
-
-	pid_t shell_pgid = getpgrp();
 
 	while (directory != NULL) {
 		sprintf(full_prog_path, "%s/%s", directory, prog);
@@ -175,9 +163,8 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 				break;
 			} else {	
 			//parent
-				if (background == 0) {
-					wait(&status);	
-				}
+
+				wait(&status);
 				break;
 			}
 		} else {
@@ -196,10 +183,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 }
 
 /* runs a program where the path is specified */
-void run_program_path(struct tokens *tokens, int redirect, int redirect_index, 
-	int background) {
-	
-
+void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 	size_t num_args;
 	int status;
 	int fildes;
@@ -228,7 +212,6 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 	char* prog = tokens_get_token(tokens, 0);
 	pid_t process_id = fork();
 
-	pid_t shell_pgid = getpgrp();
 
 	if (process_id == 0) {
 		signal(SIGINT, SIG_DFL);
@@ -239,11 +222,6 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 	  	signal(SIGTTIN, SIG_DFL);
 	  	signal(SIGTTOU, SIG_DFL);
 
-		// set process group id for new process and bring to foreground
-	  	pid_t new_pid = getpid();
-	  	setpgid(new_pid, 0);
-	  	tcsetpgrp(0, new_pid);
-
 		for (int i = 0; i <= num_args; i++) {
 			if (i == num_args) {
 				arguments[i] = NULL;
@@ -252,10 +230,8 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 			}
 		}
 		execv(prog, arguments);
-	} else {
-		//if (background == 0) {
-			wait(&status);
-		//}
+	} else {	
+		wait(&status);
 	}
 
 	if (redirect == 1) {
@@ -326,12 +302,7 @@ int main(int argc, char *argv[]) {
 
     	int redirect = 0;
     	int num_args = tokens_get_length(tokens);
-    	int background = 0;
-
-    	if (strcmp(tokens_get_token(tokens, num_args - 1), "&") == 0) {
-    		background = 1;
-    	}
-
+    	
     	int redirect_index = 0;
 
     	for (int i = 0; i < num_args; i++) {
@@ -352,9 +323,9 @@ int main(int argc, char *argv[]) {
     	}
 
     	if (!has_path) {
-    		run_program(tokens, redirect, redirect_index, background);
+    		run_program(tokens, redirect, redirect_index);
     	} else {
-    		run_program_path(tokens, redirect, redirect_index, background);
+    		run_program_path(tokens, redirect, redirect_index);
     	}
     }
 
