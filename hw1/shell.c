@@ -139,6 +139,19 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 
 			if (process_id == 0) {
 			// run program in child process
+				signal(SIGINT, SIG_DFL);
+			 	signal(SIGQUIT, SIG_DFL);
+			  	signal(SIGTERM, SIG_DFL);
+			  	signal(SIGTSTP, SIG_DFL);
+			  	signal(SIGCONT, SIG_DFL);
+			  	signal(SIGTTIN, SIG_DFL);
+			  	signal(SIGTTOU, SIG_DFL);
+
+			  	// set process group id for new process and bring to foreground
+			  	pid_t new_pid = getpid();
+			  	setpgid(new_pid, 0);
+			  	tcsetpgrp(0, new_pid);
+
 				for (int i = 0; i <= num_args; i++) {
 					if (i == num_args) {
 						arguments[i] = NULL;
@@ -201,6 +214,14 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 
 
 	if (process_id == 0) {
+		signal(SIGINT, SIG_DFL);
+	 	signal(SIGQUIT, SIG_DFL);
+	  	signal(SIGTERM, SIG_DFL);
+	  	signal(SIGTSTP, SIG_DFL);
+	  	signal(SIGCONT, SIG_DFL);
+	  	signal(SIGTTIN, SIG_DFL);
+	  	signal(SIGTTOU, SIG_DFL);
+
 		for (int i = 0; i <= num_args; i++) {
 			if (i == num_args) {
 				arguments[i] = NULL;
@@ -249,6 +270,14 @@ void init_shell() {
 
 int main(int argc, char *argv[]) {
   init_shell();
+
+  signal(SIGINT, SIG_IGN);
+  signal(SIGQUIT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
+  signal(SIGCONT, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  signal(SIGTTOU, SIG_IGN);
 
   static char line[4096];
   int line_num = 0;
