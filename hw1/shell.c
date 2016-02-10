@@ -156,18 +156,13 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 			  	signal(SIGTERM, SIG_DFL);
 			  	signal(SIGTSTP, SIG_DFL);
 			  	signal(SIGCONT, SIG_DFL);
-			  	signal(SIGTTIN, SIG_IGN);
-			  	signal(SIGTTOU, SIG_IGN);
+			  	signal(SIGTTIN, SIG_DFL);
+			  	signal(SIGTTOU, SIG_DFL);
 
 			  	// set process group id for new process and bring to foreground
 			  	pid_t new_pid = getpid();
 			  	setpgid(new_pid, 0);
 			  	tcsetpgrp(0, new_pid);
-
-			  	if (background) {
-	  				tcsetpgrp(0, shell_pgid);
-	  			}
-
 
 				for (int i = 0; i <= num_args; i++) {
 					if (i == num_args) {
@@ -180,7 +175,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 				break;
 			} else {	
 			//parent
-				if (background) {
+				if (background == 0) {
 					wait(&status);	
 				}
 				break;
@@ -249,10 +244,6 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 	  	setpgid(new_pid, 0);
 	  	tcsetpgrp(0, new_pid);
 
-	  	if (background) {
-	  		tcsetpgrp(0, shell_pgid);
-	  	}
-
 		for (int i = 0; i <= num_args; i++) {
 			if (i == num_args) {
 				arguments[i] = NULL;
@@ -262,9 +253,9 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 		}
 		execv(prog, arguments);
 	} else {
-		if (background) {
+		//if (background == 0) {
 			wait(&status);
-		}
+		//}
 	}
 
 	if (redirect == 1) {
