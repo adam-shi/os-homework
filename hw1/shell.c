@@ -181,9 +181,9 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 				break;
 			} else {	
 			//parent
-				tcsetpgrp(0, shell_pgid);
 				if (!background) {
 					wait(&status);
+					tcsetpgrp(0, shell_pgid);
 				}
 				break;
 			}
@@ -245,10 +245,11 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 	  	signal(SIGTSTP, SIG_DFL);
 	  	signal(SIGCONT, SIG_DFL);
 	  	signal(SIGTTIN, SIG_DFL);
-	  	
+
 		pid_t new_pid = getpid();
 	  	setpgid(new_pid, 0);
 	  	tcsetpgrp(0, new_pid);
+
 
 	  	if (background) {
 	  		tcsetpgrp(0, shell_pgid);
@@ -263,9 +264,10 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 		}
 		execv(prog, arguments);
 	} else {
-		tcsetpgrp(0, shell_pgid);
+
 		if (!background) {
 			wait(&status);
+			tcsetpgrp(0, shell_pgid);
 		}	
 	}
 
