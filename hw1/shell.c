@@ -90,7 +90,7 @@ int cmd_pwd(struct tokens *tokens) {
 /* Waits for background processes to finish. */
 int cmd_wait(struct tokens *tokens) {
 	int status;
-	wait(NULL);
+	while (wait(&status) > 0) {}
 	return 0;
 }
 
@@ -117,6 +117,8 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 	int status;
 	int fildes;
 	int temp_fildes;
+
+	pid_t shell_pgid = getpgrp();
 
 	// open file and parse arguments correctly if redirect is needed
 	if (redirect == 1 || redirect == 2) {
@@ -172,8 +174,11 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 				break;
 			} else {	
 			//parent
+				
 				if (!background) {
 					wait(&status);
+				} else {
+					tcsetpgrp(0, shell_pgid);
 				}
 				break;
 			}
