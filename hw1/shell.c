@@ -30,6 +30,7 @@ int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_cd(struct tokens *tokens);
 int cmd_pwd(struct tokens *tokens);
+int cmd_wait(struct tokens *tokens);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -45,7 +46,8 @@ fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_cd, "cd", "change working directory"},
-  {cmd_pwd, "pwd", "print working directory"}
+  {cmd_pwd, "pwd", "print working directory"},
+  {cmd_wait, "wait", "waits for background processes"}
 };
 
 /* Prints a helpful description for the given command */
@@ -83,6 +85,13 @@ int cmd_pwd(struct tokens *tokens) {
     return -1;
   }
 
+}
+
+/* Waits for background processes to finish. */
+int cmd_wait(struct tokens *tokens) {
+	int status;
+	wait(&status);
+	return 0;
 }
 
 /* Looks up the built-in command, if it exists. */
@@ -150,7 +159,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 			  	// set process group id for new process and bring to foreground
 			  	pid_t new_pid = getpid();
 			  	setpgid(new_pid, 0);
-			  	tcsetpgrp(0, new_pid);
+			  	// tcsetpgrp(0, new_pid);
 
 				for (int i = 0; i <= num_args; i++) {
 					if (i == num_args) {
@@ -163,7 +172,6 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 				break;
 			} else {	
 			//parent
-
 				wait(&status);
 				break;
 			}
@@ -221,6 +229,10 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 	  	signal(SIGCONT, SIG_DFL);
 	  	signal(SIGTTIN, SIG_DFL);
 	  	signal(SIGTTOU, SIG_DFL);
+
+	  	// set process group id for new process and bring to foreground
+		pid_t new_pid = getpid();
+		setpgid(new_pid, 0);
 
 		for (int i = 0; i <= num_args; i++) {
 			if (i == num_args) {
