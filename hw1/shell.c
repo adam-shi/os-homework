@@ -90,7 +90,7 @@ int cmd_pwd(struct tokens *tokens) {
 /* Waits for background processes to finish. */
 int cmd_wait(struct tokens *tokens) {
 	int status;
-	wait(&status);
+	wait(NULL);
 	return 0;
 }
 
