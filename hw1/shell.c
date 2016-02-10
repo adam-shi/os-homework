@@ -103,7 +103,9 @@ int lookup(char cmd[]) {
 }
 
 /* runs a program where the path is not specified */
-void run_program(struct tokens *tokens, int redirect, int redirect_index) {
+void run_program(struct tokens *tokens, int redirect, int redirect_index,
+	int background) {
+
 	char* prog = tokens_get_token(tokens, 0);
 
 	char* env_path = getenv("PATH");
@@ -132,6 +134,9 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 		}
 	} else {
 		num_args = tokens_get_length(tokens);
+		if (background) {
+			num_args -= 1;
+		}
 	}
 	
 	char* arguments[num_args];
@@ -156,11 +161,6 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 			  	signal(SIGTTIN, SIG_DFL);
 			  	signal(SIGTTOU, SIG_DFL);
 
-			  	// set process group id for new process and bring to foreground
-			  	pid_t new_pid = getpid();
-			  	setpgid(new_pid, 0);
-			  	// tcsetpgrp(0, new_pid);
-
 				for (int i = 0; i <= num_args; i++) {
 					if (i == num_args) {
 						arguments[i] = NULL;
@@ -172,7 +172,9 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 				break;
 			} else {	
 			//parent
-				wait(&status);
+				if (!background) {
+					wait(&status);
+				}
 				break;
 			}
 		} else {
@@ -191,7 +193,9 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 }
 
 /* runs a program where the path is specified */
-void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
+void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
+	int background) {
+
 	size_t num_args;
 	int status;
 	int fildes;
@@ -213,6 +217,9 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 		}
 	} else {
 		num_args = tokens_get_length(tokens);
+		if (background) {
+			num_args -= 1;
+		}
 	}
 
 	char* arguments[num_args];
@@ -230,10 +237,6 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 	  	signal(SIGTTIN, SIG_DFL);
 	  	signal(SIGTTOU, SIG_DFL);
 
-	  	// set process group id for new process and bring to foreground
-		pid_t new_pid = getpid();
-		setpgid(new_pid, 0);
-
 		for (int i = 0; i <= num_args; i++) {
 			if (i == num_args) {
 				arguments[i] = NULL;
@@ -242,8 +245,10 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index) {
 			}
 		}
 		execv(prog, arguments);
-	} else {	
-		wait(&status);
+	} else {
+		if (!background) {
+			wait(&status);
+		}	
 	}
 
 	if (redirect == 1) {
@@ -316,6 +321,11 @@ int main(int argc, char *argv[]) {
     	int num_args = tokens_get_length(tokens);
     	
     	int redirect_index = 0;
+    	int background;
+
+    	if (strcmp(tokens_get_token(tokens, num_args - 1), "&") == 0) {
+    		background = 1;
+    	}
 
     	for (int i = 0; i < num_args; i++) {
     		if (strcmp(tokens_get_token(tokens, i), ">") == 0) {
@@ -335,9 +345,9 @@ int main(int argc, char *argv[]) {
     	}
 
     	if (!has_path) {
-    		run_program(tokens, redirect, redirect_index);
+    		run_program(tokens, redirect, redirect_index, background);
     	} else {
-    		run_program_path(tokens, redirect, redirect_index);
+    		run_program_path(tokens, redirect, redirect_index, background);
     	}
     }
 
