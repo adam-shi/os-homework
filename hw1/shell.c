@@ -147,7 +147,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index) {
 					}
 				}
 				execv(full_prog_path, arguments);
-				exit(0);
+				break;
 			} else {	
 			//parent
 
