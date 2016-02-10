@@ -164,7 +164,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 			  	setpgid(new_pid, 0);
 			  	tcsetpgrp(0, new_pid);
 
-			  	if (background == 1) {
+			  	if (background) {
 	  				tcsetpgrp(0, shell_pgid);
 	  			}
 
@@ -180,7 +180,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 				break;
 			} else {	
 			//parent
-				if (background == 0) {
+				if (background) {
 					wait(&status);	
 				}
 				break;
@@ -262,7 +262,7 @@ void run_program_path(struct tokens *tokens, int redirect, int redirect_index,
 		}
 		execv(prog, arguments);
 	} else {
-		if (background == 0) {
+		if (background) {
 			wait(&status);
 		}
 	}
