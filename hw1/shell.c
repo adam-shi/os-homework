@@ -118,8 +118,6 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 	int fildes;
 	int temp_fildes;
 
-	pid_t shell_pgid = getpgrp();
-
 	// open file and parse arguments correctly if redirect is needed
 	if (redirect == 1 || redirect == 2) {
 		num_args = redirect_index;
@@ -141,6 +139,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 		}
 	}
 	
+
 	char* arguments[num_args];
 	char* full_prog_path = malloc(1024 * sizeof(char));
 	char* directory = strtok(copy_path, ":");
@@ -154,6 +153,7 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 			pid_t process_id = fork();
 
 			if (process_id == 0) {
+
 			// run program in child process
 				signal(SIGINT, SIG_DFL);
 			 	signal(SIGQUIT, SIG_DFL);
@@ -177,10 +177,12 @@ void run_program(struct tokens *tokens, int redirect, int redirect_index,
 						arguments[i] = tokens_get_token(tokens, i);
 					}
 				}
+
 				execv(full_prog_path, arguments);
 				break;
 			} else {	
 			//parent
+
 				if (!background) {
 					wait(&status);
 					tcsetpgrp(0, shell_pgid);
@@ -341,7 +343,7 @@ int main(int argc, char *argv[]) {
     	int num_args = tokens_get_length(tokens);
     	
     	int redirect_index = 0;
-    	int background;
+    	int background = 0;
 
     	if (strcmp(tokens_get_token(tokens, num_args - 1), "&") == 0) {
     		background = 1;
