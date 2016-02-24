@@ -44,7 +44,7 @@ void handle_files_request(int fd) {
   /* YOUR CODE HERE (Feel free to delete/modify the existing code below) */
 
   char* full_path;
-  sprintf(full_path, "%s%s", server_files_directory, );  
+  sprintf(full_path, "%s", server_files_directory);  
 
   // check if file exists
   if (access(full_path, F_OK) != -1) {
