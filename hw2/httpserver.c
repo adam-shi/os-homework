@@ -66,18 +66,19 @@ void handle_files_request(int fd) {
   // check if file exists
 
   if (is_directory) {
-    sprintf(file_path, "%s%s", server_files_directory, "index.html");
+    sprintf(file_path, "%s/%s", server_files_directory, "index.html");
     if (access(file_path, F_OK) == 0) {
       http_start_response(fd, 200);
       http_end_headers(fd);
 
+      http_send_string(fd, file_path);
 
       return;
     }
 
   } else {
 
-    sprintf(file_path, "%s%s", server_files_directory, request->path + 1);
+    sprintf(file_path, "%s/%s", server_files_directory, request->path + 1);
 
     if (access(file_path, F_OK) == 0) {
       http_start_response(fd, 200);
