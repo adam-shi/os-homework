@@ -43,19 +43,41 @@ void handle_files_request(int fd) {
 
   /* YOUR CODE HERE (Feel free to delete/modify the existing code below) */
 
-  char* full_path;
-  sprintf(full_path, "%s", server_files_directory);  
-
-  // check if file exists
-  if (access(full_path, F_OK) != -1) {
-
-  }
-
   struct http_request *request = http_request_parse(fd);
 
-  http_start_response(fd, 200);
+  char full_path[strlen(server_files_directory) + strlen(request->path) - 1];
+  sprintf(full_path, "%s%s", server_files_directory, (request->path) + 1);  
+
+  int file;
+  struct stat st;
+  int file_size;
+  char file_size_string[sizeof(int) * 8 + 1];
+
+  // check if file exists
+  if (access(full_path, F_OK) == 0) {
+    http_start_response(fd, 200);
+    http_send_header(fd, "Content-type", http_get_mime_type(full_path));
+
+    file = open(full_path, O_RDONLY);
+    stat(full_path, &st);
+    file_size = st.st_size;
+    sprintf(file_size_string, "%d", file_size);
+
+    http_send_header(fd, "Content-length", file_size_string);
+    http_send_string(fd, "file found");
+    
+  } else if (0) {
+
+  } else if (0) {
+
+  } else {
+    http_start_response(fd, 404);
+  }
+
+ 
   http_send_header(fd, "Content-type", "text/html");
   http_end_headers(fd);
+  http_send_string(fd, full_path);
   http_send_string(fd,
       "<center>"
       "<h1>Welcome to httpserver!</h1>"
