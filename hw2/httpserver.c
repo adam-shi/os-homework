@@ -71,6 +71,10 @@ void handle_files_request(int fd) {
     sprintf(file_path, "%s%s", full_path, "index.html");
     if (access(file_path, F_OK) == 0) {
       http_start_response(fd, 200);
+      http_end_headers(fd);
+
+      
+      return;
     }
 
   } else {
