@@ -45,14 +45,6 @@ void handle_files_request(int fd) {
 
   struct http_request *request = http_request_parse(fd);
 
-  int is_directory;
-
-  if (request->path[strlen(request->path) - 1] == '/') {
-    is_directory = 1;
-  } else {
-    is_directory = 0;
-  }
-
   char file_path[1024];
   char dir_path[1024];
 
@@ -62,7 +54,13 @@ void handle_files_request(int fd) {
   char file_size_string[sizeof(int) * 8 + 1];
   DIR* directory;
 
-  // check if file exists
+  int is_directory;
+  sprintf(dir_path, "%s%s", server_files_directory, request->path);
+  if (stat(dir_path, &st) == 0 && S_ISDIR(st.st_mode)) {
+    is_directory = 1;
+  } else {
+    is_directory = 0;
+  }
 
   if (is_directory) {
     sprintf(file_path, "%s%s/%s", server_files_directory, request->path, "index.html");
@@ -82,13 +80,38 @@ void handle_files_request(int fd) {
       http_send_data(fd, read_data, file_size);
       return;
     } else {
-
       http_start_response(fd, 200);
       http_send_header(fd, "Content-type", "text/html");
+      
+      struct dirent* item;
+      directory = opendir(dir_path);
+      size_t length = 0;
+      char link[1024];
 
-      sprintf(dir_path, "%s%s", server_files_directory, request->path);
+      while (item = readdir(directory)) {
+        sprintf(link, "<a href=\"%s\">%s</a>", item->d_name, item->d_name);
+        length += strlen(link);
+      }
+      sprintf(link, "<a href=\"../\">Parent directory</a>");
+      length += strlen(link);
+      closedir(directory);
+
+      sprintf(file_size_string, "%d", length);
+
+      http_send_header(fd, "Content-length", file_size_string);
+
+      http_end_headers(fd);
+
       directory = opendir(dir_path);
 
+      while (item = readdir(directory)) {
+        sprintf(link, "<a href=\"%s\">%s</a>\n", item->d_name, item->d_name);
+        http_send_data(fd, link, strlen(link));
+      }
+      sprintf(link, "<a href=\"../\">Parent directory</a>");
+      http_send_data(fd, link, strlen(link));
+
+      return;
     }
   } else {
     sprintf(file_path, "%s/%s", server_files_directory, request->path + 1);
@@ -114,6 +137,7 @@ void handle_files_request(int fd) {
   }
 
   http_start_response(fd, 404);
+  http_end_headers(fd);
 
 }
 
