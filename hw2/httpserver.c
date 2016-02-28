@@ -155,8 +155,57 @@ void handle_files_request(int fd) {
 void handle_proxy_request(int fd) {
 
   /* YOUR CODE HERE */
+  struct hostent* host = gethostbyname(server_proxy_hostname);
+  struct in_addr* ip_address = host->h_addr;
+  struct sockaddr_in server_address;
 
+  int socket_number = socket(PF_INET, SOCK_STREAM, 0);
+  if (socket_number == -1) {
+    perror("Failed to create a new socket");
+    exit(errno);
+  }
+
+  memset(&server_address, 0, sizeof(server_address));
+  server_address.sin_family = AF_INET;
+  server_address.sin_port = htons(server_proxy_port);
+  server_address.sin_addr = *ip_address;
+  int connection = connect(socket_number, (struct sockaddr*) &server_address, sizeof(server_address));
+
+  fd_set readfds;
+  fd_set writefds;
+
+  char buf;
+
+  while (fcntl(fd, F_GETFD) != -1 && fcntl(socket_number, F_GETFD) != -1) {
+    FD_SET(fd, &readfds);
+    FD_SET(fd, &writefds);
+    FD_SET(socket_number, &readfds);
+    FD_SET(socket_number, &writefds);
+
+    int ready = select(socket_number + 1, &readfds, &writefds, NULL, NULL);
+
+    if (ready) {
+      if (FD_ISSET(fd, &readfds) && FD_ISSET(socket_number, &writefds)) {
+        while (read(fd, &buf, 1)) {
+          write(socket_number, &buf, 1);
+        }
+      } else if (FD_ISSET(socket_number, &readfds) && FD_ISSET(fd, &writefds)) {
+        while (read(socket_number, &buf, 1)) {
+          write(fd, &buf, 1);
+        }
+      }
+      
+    }
+
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+  }
+
+  close(socket_number);
+  close(fd);
 }
+
+
 
 /*
  * Opens a TCP stream socket on all interfaces with port number PORTNO. Saves
