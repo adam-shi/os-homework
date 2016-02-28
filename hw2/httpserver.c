@@ -56,8 +56,6 @@ void handle_files_request(int fd) {
     is_directory = 0;
   }
 
-  char full_path[1024];
-  sprintf(full_path, "%s/%s", wd, server_files_directory);
   char file_path[1024];
 
   int file;
@@ -68,22 +66,22 @@ void handle_files_request(int fd) {
   // check if file exists
 
   if (is_directory) {
-    sprintf(file_path, "%s%s", full_path, "index.html");
+    sprintf(file_path, "%s%s", server_files_directory, "index.html");
     if (access(file_path, F_OK) == 0) {
       http_start_response(fd, 200);
       http_end_headers(fd);
 
-      
+
       return;
     }
 
   } else {
 
-    sprintf(file_path, "%s%s", full_path, request->path + 1);
+    sprintf(file_path, "%s%s", server_files_directory, request->path + 1);
 
     if (access(file_path, F_OK) == 0) {
       http_start_response(fd, 200);
-      http_send_header(fd, "Content-type", http_get_mime_type(full_path));
+      http_send_header(fd, "Content-type", http_get_mime_type(file_path));
 
       file = open(file_path, O_RDONLY);
       stat(file_path, &st);
