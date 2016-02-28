@@ -48,16 +48,8 @@ void handle_files_request(int fd) {
   char wd[1024];
   getcwd(wd, sizeof(wd));
 
-  int is_directory;
-
-  if (request->path[strlen(request->path) - 1] == '/') {
-    is_directory = 1;
-  } else {
-    is_directory = 0;
-  }
-
   char full_path[1024];
-  sprintf(full_path, "%s/%s", wd, server_files_directory);  
+  sprintf(full_path, "%s/%s%s", wd, server_files_directory, (request->path) + 1);  
 
   int file;
   struct stat st;
@@ -65,34 +57,33 @@ void handle_files_request(int fd) {
   char file_size_string[sizeof(int) * 8 + 1];
 
   // check if file exists
+  if (access(full_path, F_OK) == 0) {
+    http_start_response(fd, 200);
+    http_send_header(fd, "Content-type", http_get_mime_type(full_path));
 
-  if (is_directory) {
+    file = open(full_path, O_RDONLY);
+    stat(full_path, &st);
+    file_size = st.st_size;
+    sprintf(file_size_string, "%d", file_size);
+    char read_data[file_size];
+
+    http_send_header(fd, "Content-length", file_size_string);
+    http_end_headers(fd);
+
+    read(file, read_data, file_size);
+    http_send_data(fd, read_data, file_size);
     
+
+  } else if (0) {
+
+  } else if (0) {
+
   } else {
-    char file_path[1024];
-    sprintf(file_path, "%s/%s", full_path, request->path);
-
-    if (access(file_path, F_OK) == 0) {
-      http_start_response(fd, 200);
-      http_send_header(fd, "Content-type", http_get_mime_type(full_path));
-
-      file = open(file_path, O_RDONLY);
-      stat(file_path, &st);
-      file_size = st.st_size;
-      sprintf(file_size_string, "%d", file_size);
-      char read_data[file_size];
-
-      http_send_header(fd, "Content-length", file_size_string);
-      http_end_headers(fd);
-
-      read(file, read_data, file_size);
-      http_send_data(fd, read_data, file_size);
-
-      return;
-    }
+    http_start_response(fd, 404);
   }
-  
-  http_start_response(fd, 404);
+
+ 
+
 
 }
 
