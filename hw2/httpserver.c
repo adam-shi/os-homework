@@ -177,7 +177,7 @@ void handle_proxy_request(int fd) {
   FD_ZERO(&writefds);
 
 
-  char buf[1];
+  char buf[1024];
 
   int nfds;
   if (fd > socket_number) {
@@ -186,30 +186,26 @@ void handle_proxy_request(int fd) {
     nfds = socket_number + 1;
   } 
 
+  lseek(fd, 0, SEEK_SET);
+  lseek(socket_number, 0, SEEK_SET);
+
+  int try_read;
+
   while (fcntl(fd, F_GETFD) != -1 && fcntl(socket_number, F_GETFD) != -1) {
     FD_SET(fd, &readfds);
     FD_SET(fd, &writefds);
     FD_SET(socket_number, &readfds);
     FD_SET(socket_number, &writefds);
 
-    printf("inside while loop\n");
-
     int ready = select(nfds, &readfds, &writefds, NULL, NULL);
-
-    printf("returned from select\n");
 
     if (ready) {
       if (FD_ISSET(fd, &readfds) && FD_ISSET(socket_number, &writefds)) {
-        printf("read from fd to server");
-        while (read(fd, buf, strlen(buf)) != 0) {
-          write(socket_number, buf, strlen(buf));
-          printf("write to server");
-        }
+        read(fd, buf, 1024);
+        write(socket_number, buf, strlen(buf));
       } else if (FD_ISSET(socket_number, &readfds) && FD_ISSET(fd, &writefds)) {
-        printf("read from server to fd");
-        while (read(socket_number, buf, strlen(buf)) != 0) {
-          write(fd, buf, strlen(buf));
-        }
+        read(socket_number, buf, 1024);
+        write(fd, buf, strlen(buf));
       }
       
     }
