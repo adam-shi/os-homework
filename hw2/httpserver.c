@@ -172,8 +172,10 @@ void handle_proxy_request(int fd) {
   int connection = connect(socket_number, (struct sockaddr*) &server_address, sizeof(server_address));
 
   fd_set readfds;
-  FD_ZERO(&readfds);
   fd_set writefds;
+  FD_ZERO(&readfds);
+  FD_ZERO(&writefds);
+
 
   char buf[1];
 
@@ -192,17 +194,18 @@ void handle_proxy_request(int fd) {
 
     printf("inside while loop\n");
 
-    int ready = select(nfds, &readfds, NULL, NULL, NULL);
+    int ready = select(nfds, &readfds, &writefds, NULL, NULL);
 
     printf("returned from select\n");
 
     if (ready) {
-      if (FD_ISSET(fd, &readfds)) {
+      if (FD_ISSET(fd, &readfds) && FD_ISSET(socket_number, &writefds)) {
         printf("read from fd to server");
         while (read(fd, buf, strlen(buf)) != 0) {
           write(socket_number, buf, strlen(buf));
+          printf("write to server");
         }
-      } else if (FD_ISSET(socket_number, &readfds)) {
+      } else if (FD_ISSET(socket_number, &readfds) && FD_ISSET(fd, &writefds)) {
         printf("read from server to fd");
         while (read(socket_number, buf, strlen(buf)) != 0) {
           write(fd, buf, strlen(buf));
