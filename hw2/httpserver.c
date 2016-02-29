@@ -172,9 +172,17 @@ void handle_proxy_request(int fd) {
   int connection = connect(socket_number, (struct sockaddr*) &server_address, sizeof(server_address));
 
   fd_set readfds;
+  FD_ZERO(&readfds);
   fd_set writefds;
 
-  char buf;
+  char buf[1];
+
+  int nfds;
+  if (fd > socket_number) {
+    nfds = fd + 1;
+  } else {
+    nfds = socket_number + 1;
+  } 
 
   while (fcntl(fd, F_GETFD) != -1 && fcntl(socket_number, F_GETFD) != -1) {
     FD_SET(fd, &readfds);
@@ -182,16 +190,22 @@ void handle_proxy_request(int fd) {
     FD_SET(socket_number, &readfds);
     FD_SET(socket_number, &writefds);
 
-    int ready = select(socket_number + 1, &readfds, &writefds, NULL, NULL);
+    printf("inside while loop\n");
+
+    int ready = select(nfds, &readfds, NULL, NULL, NULL);
+
+    printf("returned from select\n");
 
     if (ready) {
-      if (FD_ISSET(fd, &readfds) && FD_ISSET(socket_number, &writefds)) {
-        while (read(fd, &buf, 1)) {
-          write(socket_number, &buf, 1);
+      if (FD_ISSET(fd, &readfds)) {
+        printf("read from fd to server");
+        while (read(fd, buf, strlen(buf)) != 0) {
+          write(socket_number, buf, strlen(buf));
         }
-      } else if (FD_ISSET(socket_number, &readfds) && FD_ISSET(fd, &writefds)) {
-        while (read(socket_number, &buf, 1)) {
-          write(fd, &buf, 1);
+      } else if (FD_ISSET(socket_number, &readfds)) {
+        printf("read from server to fd");
+        while (read(socket_number, buf, strlen(buf)) != 0) {
+          write(fd, buf, strlen(buf));
         }
       }
       
