@@ -186,9 +186,6 @@ void handle_proxy_request(int fd) {
     nfds = socket_number + 1;
   } 
 
-  lseek(fd, 3, SEEK_CUR);
-  lseek(socket_number, 3, SEEK_CUR);
-
   while (fcntl(fd, F_GETFD) != -1 && fcntl(socket_number, F_GETFD) != -1) {
     FD_SET(fd, &readfds);
     FD_SET(fd, &writefds);
@@ -200,10 +197,10 @@ void handle_proxy_request(int fd) {
     if (ready) {
       if (FD_ISSET(fd, &readfds) && FD_ISSET(socket_number, &writefds)) {
         read(fd, buf, 1024);
-        write(socket_number, buf, strlen(buf));
+        write(socket_number, buf+3, strlen(buf));
       } else if (FD_ISSET(socket_number, &readfds) && FD_ISSET(fd, &writefds)) {
         read(socket_number, buf, 1024);
-        write(fd, buf, strlen(buf));
+        write(fd, buf+3, strlen(buf));
       }
       
     }
