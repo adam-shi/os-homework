@@ -186,8 +186,8 @@ void handle_proxy_request(int fd) {
     nfds = socket_number + 1;
   } 
 
-  lseek(fd, 0, SEEK_END);
-  lseek(socket_number, 0, SEEK_END);
+  lseek(fd, 3, SEEK_CUR);
+  lseek(socket_number, 3, SEEK_CUR);
 
   while (fcntl(fd, F_GETFD) != -1 && fcntl(socket_number, F_GETFD) != -1) {
     FD_SET(fd, &readfds);
