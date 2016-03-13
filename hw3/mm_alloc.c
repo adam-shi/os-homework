@@ -26,10 +26,11 @@ void *mm_malloc(size_t size) {
     	return NULL;
     }
 
+    struct metadata header;
+
     if (head == NULL) {
     	struct metadata* heap_start = sbrk(header_size + size);
 
-    	struct metadata header;
     	header.prev = NULL;
     	header.next = NULL;
     	header.is_free = 0;
@@ -42,7 +43,50 @@ void *mm_malloc(size_t size) {
     	return (void*) (heap_start + header_size);
     }
 
+	struct metadata* new_block;
+    struct metadata* block = head;
 
+    while (block != NULL) {
+    	if (block->is_free == 1 && block->size > size) {
+    		if (block->size > (size + header_size)) {
+    			// make a new new_block
+    			struct metadata* old_next = block->next;
+
+    			header.prev = block;
+    			header.next = old_next;
+    			header.is_free = 1;
+    			header.size = size - block->size - header_size;
+
+    			*(block->next) = header;
+    			block->size = size;
+    			block->is_free = 0;
+
+    			memset((block + header_size), 0, size);
+    			return (void*) (block + header_size);
+    		} else {
+    			block->is_free = 0;
+    			memset((block + header_size), 0, size);
+    			return (void*) (block + header_size);
+    		}
+    	} else if (block->next != NULL) {
+    		block = block->next;
+    	} else {
+			new_block = sbrk(header_size + size);
+
+    		if (new_block == (void*) -1) {
+    			break;
+    		}
+
+	    	header.prev = block;
+	    	header.next = NULL;
+	    	header.is_free = 0;
+	    	header.size = size;
+	    	*new_block = header;
+
+	    	memset((new_block + header_size), 0, size);
+	    	return (void*) (new_block + header_size);   		
+    	}
+    }
 
     /* YOUR CODE HERE */
     return NULL;
