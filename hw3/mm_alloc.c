@@ -8,6 +8,12 @@
 #include <stdlib.h>
 
 void *mm_malloc(size_t size) {
+    if (size == 0) {
+    	return NULL;
+    }
+
+    
+
     /* YOUR CODE HERE */
     return NULL;
 }
