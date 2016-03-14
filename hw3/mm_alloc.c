@@ -103,6 +103,40 @@ void *mm_malloc(size_t size) {
 
 void *mm_realloc(void *ptr, size_t size) {
     /* YOUR CODE HERE */
+	if (ptr != NULL && size == 0) {
+		mm_free(ptr);
+		return NULL;
+	} 
+
+	if (ptr == NULL) {
+		if (size == 0) {
+			return NULL;
+		}
+		return mm_malloc(size);
+	} 
+
+	struct metadata* cur_header = ptr - header_size;
+	size_t old_size = cur_header->size;
+	size_t copy_size;
+
+	if (old_size < size) {
+		copy_size = old_size;
+	} else {
+		copy_size = size;
+	}
+
+	void* temp = mm_malloc(size);
+
+	if (temp == NULL) {
+		return NULL;
+	} else {
+		mm_free(ptr);
+		memcpy(temp, ptr, copy_size);
+		if (size > old_size) {
+			memset(temp + copy_size, 0, size - old_size);
+		}
+		return temp;
+	}
 
     return NULL;
 }
