@@ -94,9 +94,31 @@ void *mm_malloc(size_t size) {
 
 void *mm_realloc(void *ptr, size_t size) {
     /* YOUR CODE HERE */
+
     return NULL;
 }
 
 void mm_free(void *ptr) {
     /* YOUR CODE HERE */
+
+	if (ptr == NULL) {
+		return;
+	}
+
+	struct metadata* cur_header = ptr - header_size;
+	cur_header->is_free = 1;
+
+	// coalesce
+	if (cur_header->prev->is_free == 1) {
+		struct metadata* cur_next = cur_header->next;
+		size_t cur_size = cur_header->size;
+
+		cur_header = cur_header->prev;
+		cur_header->size = cur_header->size + header_size + cur_size;
+		cur_header->next = cur_next;
+	}
+	if (cur_header->next->is_free == 1) {
+		cur_header->size = cur_header->size + header_size + cur_header->next->size;
+		cur_header->next = cur_header->next->next;
+	}
 }
