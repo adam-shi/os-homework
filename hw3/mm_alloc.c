@@ -62,8 +62,8 @@ void *mm_malloc(size_t size) {
     			block->size = size;
     			block->is_free = 0;
 
-    			memset((block + header_size), 0, size);
-    			return (void*) (block + header_size);
+    			memset(((void*) block) + header_size, 0, size);
+    			return (((void*) block) + header_size);
     		} else {
     			block->is_free = 0;
     			memset(((void*) block) + header_size, 0, size);
