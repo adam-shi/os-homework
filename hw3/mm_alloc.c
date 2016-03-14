@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdio.h>
 
 struct metadata* head = NULL;
 
@@ -39,9 +40,11 @@ void *mm_malloc(size_t size) {
 
     	head = heap_start;
 
-    	memset((heap_start + header_size), 0, size);
-    	return (void*) (heap_start + header_size);
+    	memset(((void*) heap_start) + header_size, 0, size);
+    	return (((void*) heap_start) + header_size);
     }
+
+	printf("head is: %d\n", head);
 
 	struct metadata* new_block;
     struct metadata* block = head;
@@ -64,6 +67,7 @@ void *mm_malloc(size_t size) {
     			memset((block + header_size), 0, size);
     			return (void*) (block + header_size);
     		} else {
+    			printf("tried to allocate in block.\n");
     			block->is_free = 0;
     			memset((block + header_size), 0, size);
     			return (void*) (block + header_size);
@@ -76,6 +80,7 @@ void *mm_malloc(size_t size) {
     		if (new_block == (void*) -1) {
     			break;
     		}
+    		printf("tried to allocate whole new block\n");
 
 	    	header.prev = block;
 	    	header.next = NULL;
@@ -107,6 +112,8 @@ void mm_free(void *ptr) {
 
 	struct metadata* cur_header = ptr - header_size;
 	cur_header->is_free = 1;
+
+	printf("free: metadata located at: %d\n", cur_header);
 
 	// coalesce
 	if (cur_header->prev != NULL && cur_header->prev->is_free == 1) {
