@@ -47,7 +47,7 @@ void *mm_malloc(size_t size) {
     struct metadata* block = head;
 
     while (block != NULL) {
-    	if (block->is_free == 1 && block->size > size) {
+    	if (block->is_free == 1 && block->size >= size) {
     		if (block->size > (size + header_size)) {
     			// make a new new_block
     			struct metadata* old_next = block->next;
