@@ -51,18 +51,24 @@ void *mm_malloc(size_t size) {
     	if (block->is_free == 1 && block->size >= size) {
     		if (block->size > (size + header_size)) {
     			// make a new new_block
-    			struct metadata* old_next = block->next;
+    			struct metadata* intermediate = ((void*) block) + size + header_size;
+    			intermediate->prev = block;
+    			intermediate->next = block->next;
+    			intermediate->is_free = 1;
+    			intermediate->size = block->size - size - header_size;;
 
-    			header.prev = block;
-    			header.next = old_next;
-    			header.is_free = 1;
-    			header.size = size - block->size - header_size;
+    			printf("before assigning block\n");
 
-    			*(block->next) = header;
+    			block->next = intermediate;
+
+    			printf("after assigning block\n");
+
     			block->size = size;
     			block->is_free = 0;
 
     			memset(((void*) block) + header_size, 0, size);
+
+    			printf("after memset\n");
     			return (((void*) block) + header_size);
     		} else {
     			block->is_free = 0;
