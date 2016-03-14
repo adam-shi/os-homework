@@ -109,7 +109,7 @@ void mm_free(void *ptr) {
 	cur_header->is_free = 1;
 
 	// coalesce
-	if (cur_header->prev->is_free == 1) {
+	if (cur_header->prev != NULL && cur_header->prev->is_free == 1) {
 		struct metadata* cur_next = cur_header->next;
 		size_t cur_size = cur_header->size;
 
@@ -117,7 +117,7 @@ void mm_free(void *ptr) {
 		cur_header->size = cur_header->size + header_size + cur_size;
 		cur_header->next = cur_next;
 	}
-	if (cur_header->next->is_free == 1) {
+	if (cur_header->next != NULL && cur_header->next->is_free == 1) {
 		cur_header->size = cur_header->size + header_size + cur_header->next->size;
 		cur_header->next = cur_header->next->next;
 	}
