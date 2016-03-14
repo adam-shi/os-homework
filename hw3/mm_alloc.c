@@ -90,6 +90,8 @@ void *mm_malloc(size_t size) {
 	    	header.size = size;
 	    	*new_block = header;
 
+	    	block->next = new_block;
+
 	    	memset(((void*) new_block) + header_size, 0, size);
 	    	return (((void*) new_block) + header_size);   		
     	}
