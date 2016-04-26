@@ -121,27 +121,38 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
   /* TODO: Implement me! */
 
   if (req->type == DELREQ) {
-    if (kvstore_get(&server->store, req->key, req->val) < 0) {
+    int del_retval = tpcfollower_del(server, req->key);
+    if (del_retval < 0) {
       res->type = VOTE;
-      strcpy(res->body, ERRMSG_NO_KEY);
+      if (del_retval == ERR_KEYLEN) {
+        strcpy(res->body, ERRMSG_KEY_LEN);
+      } else if (del_retval == ERR_NOKEY) {
+        strcpy(res->body, ERRMSG_NO_KEY);
+      } else {
+        strcpy(res->body, ERRMSG_GENERIC_ERROR);
+      }
     } else {
       res->type = VOTE;
       strcpy(res->body, MSG_COMMIT);
     }
   } else if (req->type == PUTREQ) {
-    if (strlen(req->key) > MAX_KEYLEN) {
+    int put_retval = tpcfollower_put(server, req->key, req->val);
+    if (put_retval < 0) {
       res->type = VOTE;
-      strcpy(res->body, ERRMSG_KEY_LEN);
-    } else if (strlen(req->val) > MAX_VALLEN) {
-      res->type = VOTE;
-      strcpy(res->body, ERRMSG_VAL_LEN);
+      if (put_retval == ERR_KEYLEN) {
+        strcpy(res->body, ERRMSG_KEY_LEN);
+      } else if (put_retval == ERR_VALLEN) {
+        strcpy(res->body, ERRMSG_VAL_LEN);
+      } else {
+        strcpy(res->body, ERRMSG_GENERIC_ERROR);
+      }
     } else {
       res->type = VOTE;
       strcpy(res->body, MSG_COMMIT);
     }
-  } else if (req->type == COMMIT || req->type == ABORT) {
+  } /* else if (req->type == COMMIT || req->type == ABORT) {
     res->type = ACK;
-  }
+  } */
 
 
 }
