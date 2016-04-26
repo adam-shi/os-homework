@@ -121,7 +121,7 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
   /* TODO: Implement me! */
 
   if (req->type == DELREQ) {
-    int del_retval = tpcfollower_del(server, req->key);
+    int del_retval = tpcfollower_del_check(server, req->key);
     if (del_retval < 0) {
       res->type = VOTE;
       if (del_retval == ERR_KEYLEN) {
@@ -132,11 +132,13 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
         strcpy(res->body, ERRMSG_GENERIC_ERROR);
       }
     } else {
+      tpclog_log(&server->log, DELREQ, req->key, NULL);
       res->type = VOTE;
       strcpy(res->body, MSG_COMMIT);
+
     }
   } else if (req->type == PUTREQ) {
-    int put_retval = tpcfollower_put(server, req->key, req->val);
+    int put_retval = tpcfollower_put_check(server, req->key, req->val);
     if (put_retval < 0) {
       res->type = VOTE;
       if (put_retval == ERR_KEYLEN) {
@@ -147,12 +149,37 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
         strcpy(res->body, ERRMSG_GENERIC_ERROR);
       }
     } else {
+      tpclog_log(&server->log, PUTREQ, req->key, req->val);
       res->type = VOTE;
       strcpy(res->body, MSG_COMMIT);
     }
-  } else if (req->type == COMMIT || req->type == ABORT) {
+  } else if (req->type == COMMIT) {
     res->type = ACK;
-  } 
+    tpclog_iterate_begin(&server->log);
+    logentry_t* entry = malloc(sizeof(logentry_t));
+
+    while (tpclog_iterate_has_next(&server->log)) {
+      entry = tpclog_iterate_next(&server->log, entry);
+      char* log_key = malloc(strlen(entry->data));
+
+      if (entry->type == DELREQ) {
+        strcpy(log_key, entry->data);
+
+        tpcfollower_del(server, log_key);
+      } else if (entry->type == PUTREQ) {
+        char* log_val = malloc(entry->length - strlen(entry->data));
+        strcpy(log_key, entry->data);
+        strcpy(log_val, entry->data + strlen(entry->data) + 1);
+
+        tpcfollower_put(server, log_key, log_val);
+      }
+    } 
+
+    tpclog_clear_log(&server->log);
+
+  } else if (req->type == ABORT) {
+
+  }
 
 
 }
