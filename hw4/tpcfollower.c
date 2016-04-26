@@ -150,9 +150,9 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
       res->type = VOTE;
       strcpy(res->body, MSG_COMMIT);
     }
-  } /* else if (req->type == COMMIT || req->type == ABORT) {
+  } else if (req->type == COMMIT || req->type == ABORT) {
     res->type = ACK;
-  } */
+  } 
 
 
 }
