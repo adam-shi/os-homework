@@ -119,8 +119,31 @@ int tpcfollower_del(tpcfollower_t *server, char *key) {
  */
 void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_t *res) {
   /* TODO: Implement me! */
-  res->type = ERROR;
-  strcpy(res->body, ERRMSG_NOT_IMPLEMENTED);
+
+  if (req->type == DELREQ) {
+    if (kvstore_get(&server->store, req->key, req->val) < 0) {
+      res->type = VOTE;
+      strcpy(res->body, ERRMSG_NO_KEY);
+    } else {
+      res->type = VOTE;
+      strcpy(res->body, MSG_COMMIT);
+    }
+  } else if (req->type == PUTREQ) {
+    if (strlen(req->key) > MAX_KEYLEN) {
+      res->type = VOTE;
+      strcpy(res->body, ERRMSG_KEY_LEN);
+    } else if (strlen(req->val) > MAX_VALLEN) {
+      res->type = VOTE;
+      strcpy(res->body, ERRMSG_VAL_LEN);
+    } else {
+      res->type = VOTE;
+      strcpy(res->body, MSG_COMMIT);
+    }
+  } else if (req->type == COMMIT || req->type == ABORT) {
+    res->type = ACK;
+  }
+
+
 }
 
 /* Generic entrypoint for this SERVER. Takes in a socket on SOCKFD, which
