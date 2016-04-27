@@ -147,11 +147,14 @@ void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
 
   kvrequest_send(req, fol_sock);
 
-  kvresponse_receive(res, fol_sock);
+  bool valid_res = kvresponse_receive(res, fol_sock);
   close(fol_sock);
 
-  res->type = GETRESP;
-
+  if (valid_res) {
+    res->type = GETRESP;
+  } else {
+    res->type = ERROR;
+  }
 }
 
 /* Handles an incoming TPC request REQ, and populates RES as a response.
