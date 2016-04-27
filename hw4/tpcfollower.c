@@ -186,6 +186,8 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
       res->type = ERROR;
       if (get_retval == ERR_KEYLEN) {
         strcpy(res->body, ERRMSG_KEY_LEN);
+      } else if (get_retval == ERR_NOKEY) {
+        strcpy(res->body, ERRMSG_NO_KEY);
       } else {
         strcpy(res->body, ERRMSG_INVALID_REQUEST);
       }
