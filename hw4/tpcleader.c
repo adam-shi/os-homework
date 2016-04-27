@@ -150,10 +150,10 @@ void tpcleader_handle_get(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
   bool valid_res = kvresponse_receive(res, fol_sock);
   close(fol_sock);
 
-  if (valid_res) {
-    res->type = GETRESP;
-  } else {
+  if (!valid_res || res->type == ERROR) {
     res->type = ERROR;
+  } else {
+    res->type = GETRESP;
   }
 }
 
