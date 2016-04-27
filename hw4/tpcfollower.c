@@ -178,7 +178,20 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
     tpclog_clear_log(&server->log);
 
   } else if (req->type == ABORT) {
-
+    res->type = ACK;
+    tpclog_clear_log(&server->log);
+  } else if (req->type == GETREQ) {
+    int get_retval = tpcfollower_get(server, req->key, res->body);
+    if (get_retval < 0) {
+      res->type = ERROR;
+      if (get_retval == ERR_KEYLEN) {
+        strcpy(res->body, ERRMSG_KEY_LEN);
+      } else {
+        strcpy(res->body, ERRMSG_INVALID_REQUEST);
+      }
+    } else {
+      res->type = GETRESP;
+    }
   }
 
 
