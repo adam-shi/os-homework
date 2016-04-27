@@ -170,16 +170,19 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
   }
   /* TODO: Implement me! */
 
-  follower_t* follower = tpcleader_get_primary(leader, req->key);
+
+  follower_t* primary = tpcleader_get_primary(leader, req->key);
+  follower_t* follower = primary;
   int fol_sock;
   bool any_abort = false;
   bool receive_bool;
 
 
-  while (follower != NULL) {
+  for (int i = 0; i < leader->redundancy; i++) {
     fol_sock = connect_to(follower->host, follower->port, 10);
     kvrequest_send(req, fol_sock);
     receive_bool = kvresponse_receive(res, fol_sock);
+
 
     close(fol_sock);
     if (receive_bool == false || res->body[0] == 'e') {
@@ -189,14 +192,15 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     follower = tpcleader_get_successor(leader, follower);
   }
 
-  follower = tpcleader_get_primary(leader, req->key);
+  follower = primary;
 
   kvrequest_t* vote_result = malloc(sizeof(kvrequest_t));
   kvresponse_t* vote_ack = malloc(sizeof(kvresponse_t));
 
+
   if (any_abort) {
     vote_result->type = COMMIT;
-    while (follower != NULL) {
+    for (int i = 0; i < leader->redundancy; i++) {
       fol_sock = connect_to(follower->host, follower->port, 10);
       kvrequest_send(vote_result, fol_sock);
       receive_bool = kvresponse_receive(vote_ack, fol_sock);
@@ -206,7 +210,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
     }
   } else {
     vote_result->type = ABORT;
-    while (follower != NULL) {
+    for (int i = 0; i < leader->redundancy; i++) {
       fol_sock = connect_to(follower->host, follower->port, 10);
       kvrequest_send(vote_result, fol_sock);
       receive_bool = kvresponse_receive(vote_ack, fol_sock);
@@ -218,7 +222,6 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
 
   free(vote_result);
   free(vote_ack);
-
 }
 
 /* Generic entrypoint for this LEADER. Takes in a socket on SOCKFD, which
