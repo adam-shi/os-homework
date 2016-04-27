@@ -208,6 +208,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       close(fol_sock);
       follower = tpcleader_get_successor(leader, follower);
     }
+    res->type = SUCCESS;
   } else {
     vote_result->type = ABORT;
     for (int i = 0; i < leader->redundancy; i++) {
@@ -218,6 +219,7 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       close(fol_sock);
       follower = tpcleader_get_successor(leader, follower);
     }
+    res->type = ERROR;
   }
 
   free(vote_result);
