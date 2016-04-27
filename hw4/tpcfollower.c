@@ -121,13 +121,20 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
   /* TODO: Implement me! */
 
   if (req->type == DELREQ) {
+    if (server->state != TPC_WAIT) {
+      server->state = TPC_WAIT;
+    } else {
+      res->type = ERROR;
+      strcpy(res->body, ERRMSG_INVALID_REQUEST);
+    }
+
     int del_retval = tpcfollower_del_check(server, req->key);
     if (del_retval < 0) {
       res->type = VOTE;
       if (del_retval == ERR_KEYLEN) {
         strcpy(res->body, ERRMSG_KEY_LEN);
       } else if (del_retval == ERR_NOKEY) {
-        strcpy(res->body, ERRMSG_INVALID_REQUEST);
+        strcpy(res->body, ERRMSG_NO_KEY);
       } else {
         strcpy(res->body, ERRMSG_GENERIC_ERROR);
       }
@@ -138,6 +145,13 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
 
     }
   } else if (req->type == PUTREQ) {
+    if (server->state != TPC_WAIT) {
+      server->state = TPC_WAIT;
+    } else {
+      res->type = ERROR;
+      strcpy(res->body, ERRMSG_INVALID_REQUEST);
+    }
+
     int put_retval = tpcfollower_put_check(server, req->key, req->val);
     if (put_retval < 0) {
       res->type = VOTE;
@@ -154,6 +168,8 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
       strcpy(res->body, MSG_COMMIT);
     }
   } else if (req->type == COMMIT) {
+    server->state = TPC_COMMIT;
+
     res->type = ACK;
     tpclog_iterate_begin(&server->log);
     logentry_t* entry = malloc(sizeof(logentry_t));
@@ -178,6 +194,8 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
     tpclog_clear_log(&server->log);
 
   } else if (req->type == ABORT) {
+    server->state = TPC_ABORT;
+
     res->type = ACK;
     tpclog_clear_log(&server->log);
   } else if (req->type == GETREQ) {
