@@ -126,6 +126,7 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
     } else {
       res->type = ERROR;
       strcpy(res->body, ERRMSG_INVALID_REQUEST);
+      return;
     }
 
     int del_retval = tpcfollower_del_check(server, req->key);
@@ -150,6 +151,7 @@ void tpcfollower_handle_tpc(tpcfollower_t *server, kvrequest_t *req, kvresponse_
     } else {
       res->type = ERROR;
       strcpy(res->body, ERRMSG_INVALID_REQUEST);
+      return;
     }
 
     int put_retval = tpcfollower_put_check(server, req->key, req->val);
