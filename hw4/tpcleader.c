@@ -199,17 +199,6 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
 
 
   if (any_abort) {
-    vote_result->type = COMMIT;
-    for (int i = 0; i < leader->redundancy; i++) {
-      fol_sock = connect_to(follower->host, follower->port, 10);
-      kvrequest_send(vote_result, fol_sock);
-      receive_bool = kvresponse_receive(vote_ack, fol_sock);
-
-      close(fol_sock);
-      follower = tpcleader_get_successor(leader, follower);
-    }
-    res->type = SUCCESS;
-  } else {
     vote_result->type = ABORT;
     for (int i = 0; i < leader->redundancy; i++) {
       fol_sock = connect_to(follower->host, follower->port, 10);
@@ -220,6 +209,18 @@ void tpcleader_handle_tpc(tpcleader_t *leader, kvrequest_t *req, kvresponse_t *r
       follower = tpcleader_get_successor(leader, follower);
     }
     res->type = ERROR;
+
+  } else {
+    vote_result->type = COMMIT;
+    for (int i = 0; i < leader->redundancy; i++) {
+      fol_sock = connect_to(follower->host, follower->port, 10);
+      kvrequest_send(vote_result, fol_sock);
+      receive_bool = kvresponse_receive(vote_ack, fol_sock);
+
+      close(fol_sock);
+      follower = tpcleader_get_successor(leader, follower);
+    }
+    res->type = SUCCESS;
   }
 
   free(vote_result);
